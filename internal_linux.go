@@ -1,4 +1,6 @@
 // Copyright 2017 Joshua J Baker. All rights reserved.
+// Copyright 2020 Oguzhan Ergin.
+//
 // Use of this source code is governed by an MIT-style
 // license that can be found in the LICENSE file.
 
@@ -7,6 +9,8 @@ package evpoll
 import (
 	"syscall"
 	"unsafe"
+
+	"golang.org/x/sys/unix"
 )
 
 // Poll ...
@@ -75,11 +79,33 @@ func (p *Poll) Wait(iter func(fd int, note interface{}) error) error {
 	}
 }
 
+// AddReadOnce ..
+func (p *Poll) AddReadOnce(fd int) {
+	if err := syscall.EpollCtl(p.fd, syscall.EPOLL_CTL_ADD, fd,
+		&syscall.EpollEvent{Fd: int32(fd),
+			Events: unix.EPOLLONESHOT | syscall.EPOLLIN,
+		},
+	); err != nil {
+		panic(err)
+	}
+}
+
+// ModReadOnce ...
+func (p *Poll) ModReadOnce(fd int) {
+	if err := syscall.EpollCtl(p.fd, syscall.EPOLL_CTL_MOD, fd,
+		&syscall.EpollEvent{Fd: int32(fd),
+			Events: unix.EPOLLONESHOT | syscall.EPOLLIN,
+		},
+	); err != nil {
+		panic(err)
+	}
+}
+
 // AddReadWrite ...
 func (p *Poll) AddReadWrite(fd int) {
 	if err := syscall.EpollCtl(p.fd, syscall.EPOLL_CTL_ADD, fd,
 		&syscall.EpollEvent{Fd: int32(fd),
-			Events: syscall.EPOLLIN | syscall.EPOLLOUT,
+			Events: unix.EPOLLET | syscall.EPOLLIN | syscall.EPOLLOUT,
 		},
 	); err != nil {
 		panic(err)
@@ -90,7 +116,7 @@ func (p *Poll) AddReadWrite(fd int) {
 func (p *Poll) AddRead(fd int) {
 	if err := syscall.EpollCtl(p.fd, syscall.EPOLL_CTL_ADD, fd,
 		&syscall.EpollEvent{Fd: int32(fd),
-			Events: syscall.EPOLLIN,
+			Events: unix.EPOLLET | syscall.EPOLLIN,
 		},
 	); err != nil {
 		panic(err)
@@ -101,7 +127,7 @@ func (p *Poll) AddRead(fd int) {
 func (p *Poll) ModRead(fd int) {
 	if err := syscall.EpollCtl(p.fd, syscall.EPOLL_CTL_MOD, fd,
 		&syscall.EpollEvent{Fd: int32(fd),
-			Events: syscall.EPOLLIN,
+			Events: unix.EPOLLET | syscall.EPOLLIN,
 		},
 	); err != nil {
 		panic(err)
@@ -112,7 +138,7 @@ func (p *Poll) ModRead(fd int) {
 func (p *Poll) ModReadWrite(fd int) {
 	if err := syscall.EpollCtl(p.fd, syscall.EPOLL_CTL_MOD, fd,
 		&syscall.EpollEvent{Fd: int32(fd),
-			Events: syscall.EPOLLIN | syscall.EPOLLOUT,
+			Events: unix.EPOLLET | syscall.EPOLLIN | syscall.EPOLLOUT,
 		},
 	); err != nil {
 		panic(err)
@@ -123,7 +149,7 @@ func (p *Poll) ModReadWrite(fd int) {
 func (p *Poll) ModDetach(fd int) {
 	if err := syscall.EpollCtl(p.fd, syscall.EPOLL_CTL_DEL, fd,
 		&syscall.EpollEvent{Fd: int32(fd),
-			Events: syscall.EPOLLIN | syscall.EPOLLOUT,
+			Events: unix.EPOLLET | syscall.EPOLLIN | syscall.EPOLLOUT,
 		},
 	); err != nil {
 		panic(err)
