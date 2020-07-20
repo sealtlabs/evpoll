@@ -101,6 +101,17 @@ func (p *Poll) ModReadOnce(fd int) {
 	}
 }
 
+// ModReadWriteOnce ...
+func (p *Poll) ModReadWriteOnce(fd int) {
+	if err := syscall.EpollCtl(p.fd, syscall.EPOLL_CTL_MOD, fd,
+		&syscall.EpollEvent{Fd: int32(fd),
+			Events: unix.EPOLLONESHOT | syscall.EPOLLIN | syscall.EPOLLOUT,
+		},
+	); err != nil {
+		panic(err)
+	}
+}
+
 // AddReadWrite ...
 func (p *Poll) AddReadWrite(fd int) {
 	if err := syscall.EpollCtl(p.fd, syscall.EPOLL_CTL_ADD, fd,
